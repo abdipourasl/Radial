@@ -93,10 +93,7 @@ if gr
 ax(6)=subplot(326);plot(ecg_m);axis tight;title('Averaged with 30 samples length,Black noise,Green Adaptive Threshold,RED Sig Level,Red circles QRS adaptive threshold');
 axis tight;
 end
-%% Fiducial Mark 
-% Note : a minimum distance of 40 samples is considered between each R wave
-% since in physiological point of view no RR wave can occur in less than
-% 200 msec distance
+
 [pks,locs] = findpeaks(ecg_m,'MINPEAKDISTANCE',round(0.2*fs));
 %% initialize the training phase (2 seconds of the signal) to determine the THR_SIG and THR_NOISE
 THR_SIG = max(ecg_m(1:2*fs))*1/3; % 0.25 of the max amplitude 
@@ -110,7 +107,6 @@ SIG_LEV1 = THR_SIG1; % Signal level in Bandpassed filter
 NOISE_LEV1 = THR_NOISE1; % Noise level in Bandpassed filter
 %% Thresholding and online desicion rule
 for i = 1 : length(pks)
-    
    %% locate the corresponding peak in the filtered signal 
     if locs(i)-round(0.150*fs)>= 1 && locs(i)<= length(ecg_h)
           [y_i x_i] = max(ecg_h(locs(i)-round(0.150*fs):locs(i)));
@@ -123,11 +119,8 @@ for i = 1 : length(pks)
           end
         
      end
-    
-    
   %% update the heart_rate (Two heart rate means one the most recent and the other selected)
     if length(qrs_c) >= 9 
-        
         diffRR = diff(qrs_i(end-8:end)); %calculate RR interval
         mean_RR = mean(diffRR); % calculate the mean of 8 previous R waves interval
         comp =qrs_i(end)-qrs_i(end-1); %latest RR
@@ -144,10 +137,8 @@ for i = 1 : length(pks)
         end 
           
     end
-    
       %% calculate the mean of the last 8 R waves to make sure that QRS is not
        % missing(If no R detected , trigger a search back) 1.66*mean
-       
        if m_selected_RR
            test_m = m_selected_RR; %if the regular RR availabe use it   
        elseif mean_RR && m_selected_RR == 0
@@ -155,7 +146,6 @@ for i = 1 : length(pks)
        else
            test_m = 0;
        end
-        
     if test_m
           if (locs(i) - qrs_i(end)) >= round(1.66*test_m)% it shows a QRS is missed 
               [pks_temp,locs_temp] = max(ecg_m(qrs_i(end)+ round(0.200*fs):locs(i)-round(0.200*fs))); % search back and locate the max in this interval
@@ -172,13 +162,11 @@ for i = 1 : length(pks)
                 [y_i_t x_i_t] = max(ecg_h(locs_temp-round(0.150*fs):end));
                end
                % take care of bandpass signal threshold
-               if y_i_t > THR_NOISE1 
-                        
+               if y_i_t > THR_NOISE1       
                       qrs_i_raw = [qrs_i_raw locs_temp-round(0.150*fs)+ (x_i_t - 1)];% save index of bandpass 
                       qrs_amp_raw =[qrs_amp_raw y_i_t]; %save amplitude of bandpass 
                       SIG_LEV1 = 0.25*y_i_t + 0.75*SIG_LEV1; %when found with the second thres 
                end
-               
                not_nois = 1;
                SIG_LEV = 0.25*pks_temp + 0.75*SIG_LEV ;  %when found with the second threshold             
              end 
@@ -188,10 +176,6 @@ for i = 1 : length(pks)
               
           end
     end
-      
-    
-    
-    
     %%  find noise and QRS peaks
     if pks(i) >= THR_SIG
         
@@ -212,14 +196,11 @@ for i = 1 : length(pks)
                              else
                                  skip = 0;
                              end
-            
                       end
                  end
-        
         if skip == 0  % skip is 1 when a T wave is detected       
         qrs_c = [qrs_c pks(i)];
         qrs_i = [qrs_i locs(i)];
-        
         % bandpass filter check threshold
          if y_i >= THR_SIG1
                         if ser_back 
@@ -234,17 +215,12 @@ for i = 1 : length(pks)
         % adjust Signal level
         SIG_LEV = 0.125*pks(i) + 0.875*SIG_LEV ;
         end
-        
-        
     elseif THR_NOISE <= pks(i) && pks(i)<THR_SIG
         
          %adjust Noise level in filtered sig
          NOISE_LEV1 = 0.125*y_i + 0.875*NOISE_LEV1;
          %adjust Noise level in MVI
          NOISE_LEV = 0.125*pks(i) + 0.875*NOISE_LEV; 
-        
-        
-      
     elseif pks(i) < THR_NOISE
         nois_c = [nois_c pks(i)];
         nois_i = [nois_i locs(i)];
@@ -254,15 +230,8 @@ for i = 1 : length(pks)
         %end
         
          %adjust Noise level in MVI
-        NOISE_LEV = 0.125*pks(i) + 0.875*NOISE_LEV;  
-        
-           
+        NOISE_LEV = 0.125*pks(i) + 0.875*NOISE_LEV;    
     end
-    
-    
-    
- 
-    
     %% adjust the threshold with SNR
     if NOISE_LEV ~= 0 || SIG_LEV ~= 0
         THR_SIG = NOISE_LEV + 0.25*(abs(SIG_LEV - NOISE_LEV));
@@ -274,7 +243,6 @@ for i = 1 : length(pks)
         THR_SIG1 = NOISE_LEV1 + 0.25*(abs(SIG_LEV1 - NOISE_LEV1));
         THR_NOISE1 = 0.5*(THR_SIG1);
     end
-    
     
 % take a track of thresholds of smoothed signal
 SIGL_buf = [SIGL_buf SIG_LEV];
@@ -316,5 +284,3 @@ line(repmat(qrs_i_raw,[2 1]),repmat([min(ecg-mean(ecg))/2; max(ecg-mean(ecg))/2]
 linkaxes(az,'x');
 zoom on;
 end
-
- 
