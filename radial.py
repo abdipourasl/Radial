@@ -2,7 +2,7 @@
 """
 Created on Fri Nov  4 18:07:03 2022
 
-@author: ASUS
+@author: Amin Abdipour
 """
 
 ### Import required packages
